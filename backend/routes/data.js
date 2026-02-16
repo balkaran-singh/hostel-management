@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Complaint = require('../models/Complaint');
+const MessChoice = require('../models/MessChoice');
 const MessResponse = require('../models/MessResponse');
 const Student = require('../models/Student');
 
@@ -76,6 +77,89 @@ router.get('/student-search', async (req, res) => {
     } else {
       res.json({ notFound: true });
     }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- 1. GET MESS CHOICES FOR TODAY ---
+router.get('/mess-choices/:studentId', async (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    let choice = await MessChoice.findOne({ studentId: req.params.studentId, date: today });
+    
+    // If no choice exists yet, return defaults
+    if (!choice) {
+      return res.json({ breakfast: 'Not Eating', lunch: 'Not Eating', dinner: 'Not Eating' });
+    }
+    res.json(choice);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- 2. SUBMIT MESS CHOICE (Handles Updates too) ---
+router.post('/mess-choice', async (req, res) => {
+  const { studentId, studentName, hostelName, mealType, choice } = req.body;
+  const today = new Date().toISOString().split('T')[0];
+
+  try {
+    // Find today's record, or create it if it doesn't exist
+    let record = await MessChoice.findOne({ studentId, date: today });
+
+    if (!record) {
+      record = new MessChoice({
+        studentId,
+        studentName,
+        hostelName,
+        date: today
+      });
+    }
+
+    // Update the specific meal (breakfast, lunch, or dinner)
+    if (mealType === 'Breakfast') record.breakfast = choice;
+    if (mealType === 'Lunch') record.lunch = choice;
+    if (mealType === 'Dinner') record.dinner = choice;
+
+    await record.save();
+    res.json({ success: true, data: record });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save choice' });
+  }
+});
+
+// --- 3. GET DASHBOARD STATS (UPDATED FOR 3 MEALS) ---
+router.get('/dashboard-stats/:hostel', async (req, res) => {
+  const { hostel } = req.params;
+  const today = new Date().toISOString().split('T')[0];
+
+  try {
+    // 1. Total Students in this Hostel
+    const totalStudents = await Student.countDocuments({ hostelName: hostel });
+
+    // 2. Pending Complaints
+    const pendingComplaints = await Complaint.countDocuments({ hostelName: hostel, status: 'Pending' });
+
+    // 3. Mess Stats (The Hard Part: Aggregating 3 columns)
+    const stats = await MessChoice.aggregate([
+      { $match: { hostelName: hostel, date: today } },
+      {
+        $group: {
+          _id: null,
+          breakfastEating: { $sum: { $cond: [{ $eq: ["$breakfast", "Eating"] }, 1, 0] } },
+          lunchEating: { $sum: { $cond: [{ $eq: ["$lunch", "Eating"] }, 1, 0] } },
+          dinnerEating: { $sum: { $cond: [{ $eq: ["$dinner", "Eating"] }, 1, 0] } }
+        }
+      }
+    ]);
+
+    const messData = stats[0] || { breakfastEating: 0, lunchEating: 0, dinnerEating: 0 };
+
+    res.json({
+      totalStudents,
+      pendingComplaints,
+      messStats: messData
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import Eye Icons
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
 import { registerStudent } from '../../api';
 
 const StudentRegister = () => {
@@ -14,7 +14,7 @@ const StudentRegister = () => {
     roomNumber: ''
   });
   
-  const [showPassword, setShowPassword] = useState(false); // State for toggle
+  const [showPassword, setShowPassword] = useState(false); 
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
@@ -22,34 +22,53 @@ const StudentRegister = () => {
     setError('');
   };
 
-  // --- STRICT VALIDATION ---
+  // --- EXPERIMENT-5 VALIDATION LOGIC ---
   const validateForm = () => {
     const { name, password, rollNumber, roomNumber } = formData;
 
-    // 1. Name: 3-30 chars
+    // 1. Name
     if (name.length < 3 || name.length > 30) {
       return "Name must be between 3 and 30 characters.";
     }
 
-    // 2. Password: Min 5 chars + Letter + Number
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    if (password.length < 5 || !hasLetter || !hasNumber) {
-      return "Password must be 5+ chars and contain BOTH letters & numbers (e.g. 'pass123').";
+    // 2. PASSWORD VALIDATION (Strict Experiment-5 Rules)
+    // Rule 1: Length 8-15
+    if (password.length < 8 || password.length > 15) {
+      return "Password must be between 8 and 15 characters.";
+    }
+    // Rule 2: At least one digit
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one digit (0-9).";
+    }
+    // Rule 3: At least one upper case
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one Upper Case letter (A-Z).";
+    }
+    // Rule 4: At least one lower case
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one Lower Case letter (a-z).";
+    }
+    // Rule 5: At least one special character (!@#$%&*()-+=^)
+    if (!/[!@#$%&*()\-+=^]/.test(password)) {
+      return "Password must contain at least one special character (!@#$%&*()-+=^).";
+    }
+    // Rule 6: No white space
+    if (/\s/.test(password)) {
+      return "Password must not contain any white space.";
     }
 
-    // 3. Roll Number: Min 9 digits
+    // 3. Roll Number
     if (rollNumber.length < 9 || isNaN(rollNumber)) {
       return "Roll Number must be at least 9 digits.";
     }
 
-    // 4. Room Number: 1-999
+    // 4. Room Number
     const room = parseInt(roomNumber);
     if (room < 1 || room > 999) {
       return "Room Number must be between 1 and 999.";
     }
 
-    return null;
+    return null; // Validation Passed
   };
 
   const handleRegister = async (e) => {
@@ -100,24 +119,22 @@ const StudentRegister = () => {
                 type={showPassword ? "text" : "password"} 
                 name="password" 
                 onChange={handleChange} 
-                placeholder="Letters + Numbers (Min 5)"
+                placeholder="8-15 chars, Upper, Lower, Digit, Special"
                 required 
-                style={{ paddingRight: '40px' }} // Make room for icon
+                style={{ paddingRight: '40px' }} 
               />
               <span 
                 onClick={() => setShowPassword(!showPassword)}
                 style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  cursor: 'pointer',
-                  color: '#6b7280'
+                  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280'
                 }}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </span>
             </div>
+            <small style={{ fontSize: '0.7rem', color: '#666' }}>
+              Must have: 1 Upper, 1 Lower, 1 Digit, 1 Special Char.
+            </small>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

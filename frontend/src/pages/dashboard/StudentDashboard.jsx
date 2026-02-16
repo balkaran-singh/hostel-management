@@ -5,139 +5,176 @@ import API from '../../api';
 const StudentDashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [complaints, setComplaints] = useState([]);
-  const [messStatus, setMessStatus] = useState(null); // 'Eating', 'Not Eating', or null
+  const [currentTime, setCurrentTime] = useState(new Date());
   
-  // Form State
-  const [category, setCategory] = useState('Electricity'); // Renamed for clarity
-  const [description, setDescription] = useState('');
+  // State for the 3 meals
+  const [choices, setChoices] = useState({
+    breakfast: 'Not Eating',
+    lunch: 'Not Eating',
+    dinner: 'Not Eating'
+  });
 
-  // 1. Load User & Data on Mount
+  // Complaint State
+  const [category, setCategory] = useState('Electricity');
+  const [description, setDescription] = useState('');
+  const [complaints, setComplaints] = useState([]);
+
+  // --- DEADLINES (24 Hour Format) ---
+  const DEADLINES = {
+    Breakfast: 7,  // 7:00 AM
+    Lunch: 11,     // 11:00 AM
+    Dinner: 18     // 6:00 PM (18:00)
+  };
+
   useEffect(() => {
+    // 1. Load User
     const storedUser = localStorage.getItem('student');
-    if (!storedUser) {
-      navigate('/student/login'); 
-      return;
-    }
+    if (!storedUser) { navigate('/student/login'); return; }
     const parsedUser = JSON.parse(storedUser);
     setUser(parsedUser);
+
+    // 2. Fetch Today's Choices from Backend
+    fetchChoices(parsedUser._id);
     fetchComplaints(parsedUser._id);
 
-    // --- NEW: Check if they already voted TODAY ---
-    const today = new Date().toISOString().split('T')[0]; // e.g. "2026-02-09"
-    const savedChoice = localStorage.getItem(`messChoice_${parsedUser._id}_${today}`);
-    if (savedChoice) {
-      setMessStatus(savedChoice);
-    }
+    // 3. Start Live Clock
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
+
+  const fetchChoices = async (id) => {
+    try {
+      const { data } = await API.get(`/data/mess-choices/${id}`);
+      setChoices(data); // Backend returns { breakfast: '...', lunch: '...', dinner: '...' }
+    } catch (err) {
+      console.error("Error fetching choices", err);
+    }
+  };
 
   const fetchComplaints = async (id) => {
     try {
       const { data } = await API.get(`/data/my-complaints/${id}`);
-      setComplaints(data); // In the backend, we sort by date automatically
-    } catch (err) {
-      console.error("Failed to fetch complaints", err);
-    }
+      setComplaints(data);
+    } catch (err) { console.error(err); }
   };
 
-  // 2. Handle Mess Choice (With Locking)
-  const handleMessChoice = async (choice) => {
+  // --- HANDLE VOTE ---
+  const handleVote = async (mealType, choice) => {
+    // 1. Check Time again instantly before sending (Security)
+    const hour = new Date().getHours();
+    if (hour >= DEADLINES[mealType]) {
+      alert(`Time is up for ${mealType}! Deadline passed.`);
+      return;
+    }
+
+    // 2. Optimistic UI Update (Update screen immediately)
+    setChoices(prev => ({ ...prev, [mealType.toLowerCase()]: choice }));
+
+    // 3. Send to Backend
     try {
       await API.post('/data/mess-choice', {
         studentId: user._id,
+        studentName: user.name,
         hostelName: user.hostelName,
+        mealType: mealType, // 'Breakfast', 'Lunch', or 'Dinner'
         choice: choice
       });
-      
-      // Lock the choice in LocalStorage so it persists on refresh
-      const today = new Date().toISOString().split('T')[0];
-      localStorage.setItem(`messChoice_${user._id}_${today}`, choice);
-      
-      setMessStatus(choice);
-      alert(`Preference Saved: ${choice} ✅`);
     } catch (err) {
-      alert('Error saving preference');
+      alert("Failed to save. Check internet.");
     }
   };
 
-  // 3. Handle New Complaint (Fixed Category)
+  // --- COMPLAINT HANDLER ---
   const handleComplaint = async (e) => {
     e.preventDefault();
     try {
       await API.post('/data/complaint', {
-        studentId: user._id,
-        studentName: user.name,
-        hostelName: user.hostelName,
-        roomNumber: user.roomNumber,
-        
-        // --- FIX: Send as 'type' to match MongoDB Schema ---
-        type: category, 
-        description
+        studentId: user._id, studentName: user.name, hostelName: user.hostelName,
+        roomNumber: user.roomNumber, type: category, description
       });
-      
       alert('Complaint Filed! 📨');
       setDescription('');
-      fetchComplaints(user._id); // Refresh list instantly
-    } catch (err) {
-      alert('Failed to file complaint');
-    }
+      fetchComplaints(user._id);
+    } catch (err) { alert('Failed to file complaint'); }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('student');
-    navigate('/');
+  // --- HELPER: RENDER MEAL ROW ---
+  const renderMealRow = (meal, icon) => {
+    const hour = currentTime.getHours();
+    const isLocked = hour >= DEADLINES[meal];
+    const status = choices[meal.toLowerCase()] || 'Not Eating'; // Default to 'Not Eating'
+
+    return (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', borderBottom: '1px solid #eee' }}>
+        <div>
+          <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{icon} {meal}</h3>
+          <small style={{ color: isLocked ? 'red' : 'green' }}>
+            {isLocked ? `Closed at ${DEADLINES[meal]}:00` : `Open until ${DEADLINES[meal]}:00`}
+          </small>
+        </div>
+        
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          {isLocked ? (
+            // LOCKED STATE (Just text)
+            <span style={{ fontWeight: 'bold', color: '#555' }}>
+              Final: {status}
+            </span>
+          ) : (
+            // OPEN STATE (Buttons)
+            <>
+              <button 
+                className={`btn ${status === 'Eating' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                onClick={() => handleVote(meal, 'Eating')}
+              >
+                Eat
+              </button>
+              <button 
+                className={`btn ${status === 'Not Eating' ? 'btn-danger' : 'btn-outline'}`}
+                style={{ padding: '0.5rem 1rem', fontSize: '0.9rem' }}
+                onClick={() => handleVote(meal, 'Not Eating')}
+              >
+                Skip
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    );
   };
+
+  const handleLogout = () => { localStorage.removeItem('student'); navigate('/'); };
 
   if (!user) return <div className="flex-center">Loading...</div>;
 
   return (
     <div className="container">
-      {/* --- HEADER --- */}
+      {/* HEADER */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <div>
           <h1 className="title">👋 Welcome, {user.name}</h1>
-          <p className="subtitle">Room {user.roomNumber} • Hostel {user.hostelName}</p>
+          <p className="subtitle">
+            {currentTime.toLocaleTimeString()} (IST) • Room {user.roomNumber}
+          </p>
         </div>
         <button onClick={handleLogout} className="btn btn-danger" style={{ width: 'auto' }}>Logout</button>
       </div>
 
       <div className="grid-dashboard">
-        
-        {/* --- CARD 1: MESS MENU (Locked if Voted) --- */}
+        {/* --- CARD 1: MESS MENU & VOTING (UPDATED) --- */}
         <div className="card">
-          <h2 className="title" style={{ fontSize: '1.5rem' }}>🍽️ Today's Menu</h2>
-          <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: '8px', marginBottom: '1rem' }}>
-            <strong>Lunch:</strong> Rajma Chawal & Curd <br/>
-            <strong>Dinner:</strong> Mix Veg & Roti
+          <h2 className="title" style={{ fontSize: '1.5rem' }}>🍽️ Daily Meals</h2>
+          <div style={{ background: '#f9fafb', borderRadius: '12px', overflow: 'hidden' }}>
+            {renderMealRow('Breakfast', '🍳')}
+            {renderMealRow('Lunch', '🍛')}
+            {renderMealRow('Dinner', '🍲')}
           </div>
-          
-          <p style={{ marginBottom: '1rem' }}>
-            {messStatus ? <strong>You have already voted: {messStatus}</strong> : "Will you be eating?"}
+          <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#666', textAlign: 'center' }}>
+            *If no option is selected by deadline, it defaults to "Not Eating".
           </p>
-
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            {/* Logic: If messStatus exists (already voted), disable BOTH buttons */}
-            <button 
-              className={`btn ${messStatus === 'Eating' ? 'btn-primary' : 'btn-outline'}`}
-              onClick={() => handleMessChoice('Eating')}
-              disabled={!!messStatus} 
-              style={{ opacity: messStatus && messStatus !== 'Eating' ? 0.5 : 1 }}
-            >
-              {messStatus === 'Eating' ? 'Eating ✅' : "Yes, I'm Eating 😋"}
-            </button>
-            
-            <button 
-              className={`btn ${messStatus === 'Not Eating' ? 'btn-danger' : 'btn-outline'}`}
-              onClick={() => handleMessChoice('Not Eating')}
-              disabled={!!messStatus}
-              style={{ opacity: messStatus && messStatus !== 'Not Eating' ? 0.5 : 1 }}
-            >
-              {messStatus === 'Not Eating' ? 'Skipping ❌' : "No, I'm Out"}
-            </button>
-          </div>
         </div>
 
-        {/* --- CARD 2: COMPLAINT BOX --- */}
+        {/* --- CARD 2: COMPLAINT BOX (Keep as is) --- */}
         <div className="card">
           <h2 className="title" style={{ fontSize: '1.5rem' }}>📢 File Complaint</h2>
           <form onSubmit={handleComplaint}>
@@ -153,21 +190,15 @@ const StudentDashboard = () => {
             </div>
             <div className="form-group">
               <label>Description</label>
-              <textarea 
-                rows="3" 
-                value={description} 
-                onChange={(e) => setDescription(e.target.value)} 
-                required 
-                placeholder="Describe the issue..."
-              />
+              <textarea rows="3" value={description} onChange={(e) => setDescription(e.target.value)} required placeholder="Describe the issue..." />
             </div>
             <button type="submit" className="btn btn-primary">Submit Complaint</button>
           </form>
         </div>
       </div>
 
-      {/* --- SECTION 3: COMPLAINT HISTORY (Fixed Columns) --- */}
-      <h2 className="title" style={{ marginTop: '3rem' }}>📜 Your History</h2>
+      {/* --- HISTORY TABLE (Keep as is) --- */}
+      <h2 className="title" style={{ marginTop: '3rem' }}>📜 Your Complaint History</h2>
       <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
@@ -179,25 +210,16 @@ const StudentDashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {complaints.length === 0 ? (
-              <tr><td colSpan="4" style={{ padding: '1rem', textAlign: 'center' }}>No complaints found.</td></tr>
-            ) : (
-              complaints.map((c) => (
-                <tr key={c._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                  <td style={{ padding: '1rem' }}>{new Date(c.date).toLocaleDateString()}</td>
-                  
-                  {/* FIX: Use c.type, not c.title */}
-                  <td style={{ padding: '1rem', fontWeight: 'bold' }}>{c.type}</td>
-                  
-                  <td style={{ padding: '1rem' }}>{c.description}</td>
-                  <td style={{ padding: '1rem' }}>
-                    <span className={`badge ${c.status === 'Resolved' ? 'badge-resolved' : 'badge-pending'}`}>
-                      {c.status}
-                    </span>
-                  </td>
-                </tr>
-              ))
-            )}
+            {complaints.map((c) => (
+              <tr key={c._id} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                <td style={{ padding: '1rem' }}>{new Date(c.date).toLocaleDateString()}</td>
+                <td style={{ padding: '1rem', fontWeight: 'bold' }}>{c.type}</td>
+                <td style={{ padding: '1rem' }}>{c.description}</td>
+                <td style={{ padding: '1rem' }}>
+                  <span className={`badge ${c.status === 'Resolved' ? 'badge-resolved' : 'badge-pending'}`}>{c.status}</span>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>

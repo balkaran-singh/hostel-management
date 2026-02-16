@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import Icons
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
 import { registerAdmin } from '../../api';
 
 const AdminRegister = () => {
@@ -13,7 +13,6 @@ const AdminRegister = () => {
     secretKey: ''
   });
   
-  // Separate toggles for Password and Secret Key
   const [showPassword, setShowPassword] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +22,7 @@ const AdminRegister = () => {
     setError('');
   };
 
-  // --- STRICT VALIDATION ---
+  // --- EXPERIMENT-5 VALIDATION LOGIC ---
   const validateForm = () => {
     const { name, password } = formData;
 
@@ -31,10 +30,29 @@ const AdminRegister = () => {
       return "Name must be between 3 and 30 characters.";
     }
 
-    const hasLetter = /[a-zA-Z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    if (password.length < 5 || !hasLetter || !hasNumber) {
-      return "Password must be 5+ chars and contain BOTH letters & numbers.";
+    // 1. Length 8-15
+    if (password.length < 8 || password.length > 15) {
+      return "Password must be between 8 and 15 characters.";
+    }
+    // 2. At least one digit
+    if (!/[0-9]/.test(password)) {
+      return "Password must contain at least one digit (0-9).";
+    }
+    // 3. At least one upper case
+    if (!/[A-Z]/.test(password)) {
+      return "Password must contain at least one Upper Case letter (A-Z).";
+    }
+    // 4. At least one lower case
+    if (!/[a-z]/.test(password)) {
+      return "Password must contain at least one Lower Case letter (a-z).";
+    }
+    // 5. At least one special character (!@#$%&*()-+=^)
+    if (!/[!@#$%&*()\-+=^]/.test(password)) {
+      return "Password must contain at least one special character (!@#$%&*()-+=^).";
+    }
+    // 6. No white space
+    if (/\s/.test(password)) {
+      return "Password must not contain any white space.";
     }
 
     return null;
@@ -83,7 +101,7 @@ const AdminRegister = () => {
                 type={showPassword ? "text" : "password"} 
                 name="password" 
                 onChange={handleChange} 
-                placeholder="Letters + Numbers (Min 5)"
+                placeholder="8-15 chars, Upper, Lower, Special"
                 required 
                 style={{ paddingRight: '40px' }}
               />
@@ -96,6 +114,9 @@ const AdminRegister = () => {
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </span>
             </div>
+            <small style={{ fontSize: '0.7rem', color: '#666' }}>
+              Must have: 1 Upper, 1 Lower, 1 Digit, 1 Special Char.
+            </small>
           </div>
 
           <div className="form-group">
@@ -109,11 +130,11 @@ const AdminRegister = () => {
           </div>
 
           <div className="form-group">
-            <label style={{ color: 'red' }}>Secret Warden Key (WARDEN_2026 FOR TESTING) </label>
+            <label style={{ color: 'red' }}>Secret Warden Key</label>
             <div style={{ position: 'relative' }}>
               <input 
                 name="secretKey" 
-                type={showSecret ? "text" : "password"} // Uses separate state
+                type={showSecret ? "text" : "password"} 
                 placeholder="Enter Access Code" 
                 onChange={handleChange} 
                 required 
