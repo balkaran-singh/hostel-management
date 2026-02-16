@@ -7,12 +7,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Connect to DB
 mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB Connected"))
+  .then(() => console.log("---MongoDB Connected---"))
   .catch(err => console.log(err));
 
-// Routes
 const authRoutes = require('./routes/auth');
 const dataRoutes = require('./routes/data');
 
