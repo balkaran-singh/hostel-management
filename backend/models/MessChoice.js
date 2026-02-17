@@ -6,7 +6,7 @@ const MessChoiceSchema = new mongoose.Schema({
   hostelName: String,
   date: { type: String, required: true }, // Format: "YYYY-MM-DD"
   
-  // The 3 Meals (Default is "Not Eating" if they don't vote)
+  // The 3 Meals (This is what the Admin Dashboard needs)
   breakfast: { type: String, default: 'Not Eating' }, 
   lunch: { type: String, default: 'Not Eating' },
   dinner: { type: String, default: 'Not Eating' }
