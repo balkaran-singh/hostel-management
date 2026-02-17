@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaEye, FaEyeSlash } from 'react-icons/fa'; 
+import { FaEye, FaEyeSlash, FaArrowLeft } from 'react-icons/fa'; // Added FaArrowLeft
 import { registerAdmin } from '../../api';
 
 const AdminRegister = () => {
@@ -22,7 +22,7 @@ const AdminRegister = () => {
     setError('');
   };
 
-  // --- EXPERIMENT-5 VALIDATION LOGIC ---
+  // --- STRICT VALIDATION (Experiment-5) ---
   const validateForm = () => {
     const { name, password } = formData;
 
@@ -30,30 +30,13 @@ const AdminRegister = () => {
       return "Name must be between 3 and 30 characters.";
     }
 
-    // 1. Length 8-15
-    if (password.length < 8 || password.length > 15) {
-      return "Password must be between 8 and 15 characters.";
-    }
-    // 2. At least one digit
-    if (!/[0-9]/.test(password)) {
-      return "Password must contain at least one digit (0-9).";
-    }
-    // 3. At least one upper case
-    if (!/[A-Z]/.test(password)) {
-      return "Password must contain at least one Upper Case letter (A-Z).";
-    }
-    // 4. At least one lower case
-    if (!/[a-z]/.test(password)) {
-      return "Password must contain at least one Lower Case letter (a-z).";
-    }
-    // 5. At least one special character (!@#$%&*()-+=^)
-    if (!/[!@#$%&*()\-+=^]/.test(password)) {
-      return "Password must contain at least one special character (!@#$%&*()-+=^).";
-    }
-    // 6. No white space
-    if (/\s/.test(password)) {
-      return "Password must not contain any white space.";
-    }
+    // Password Rules: 8-15 chars, Upper, Lower, Digit, Special, No Spaces
+    if (password.length < 8 || password.length > 15) return "Password must be 8-15 characters.";
+    if (!/[0-9]/.test(password)) return "Password must contain at least one digit.";
+    if (!/[A-Z]/.test(password)) return "Password must contain at least one Upper Case letter.";
+    if (!/[a-z]/.test(password)) return "Password must contain at least one Lower Case letter.";
+    if (!/[!@#$%&*()\-+=^]/.test(password)) return "Password must contain at least one special character.";
+    if (/\s/.test(password)) return "Password must not contain white spaces.";
 
     return null;
   };
@@ -77,8 +60,20 @@ const AdminRegister = () => {
 
   return (
     <div className="flex-center">
-      <div className="card" style={{ width: '400px', borderTop: '4px solid var(--danger)' }}>
-        <h2 className="title">Warden Registration</h2>
+      <div className="card" style={{ width: '400px', borderTop: '4px solid var(--danger)', position: 'relative' }}>
+        
+        {/* --- NAVIGATION: BACK TO HOME --- */}
+        <div 
+          onClick={() => navigate('/')} 
+          style={{ 
+            position: 'absolute', top: '1rem', left: '1rem', 
+            cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' 
+          }}
+        >
+          <FaArrowLeft /> Home
+        </div>
+
+        <h2 className="title" style={{ marginTop: '1.5rem' }}>Warden Registration</h2>
         <p className="subtitle">Authorized Personnel Only</p>
         
         {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>⚠️ {error}</div>}
@@ -101,22 +96,18 @@ const AdminRegister = () => {
                 type={showPassword ? "text" : "password"} 
                 name="password" 
                 onChange={handleChange} 
-                placeholder="8-15 chars, Upper, Lower, Special"
+                placeholder="8-15 chars, Strong Password"
                 required 
                 style={{ paddingRight: '40px' }}
               />
               <span 
                 onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280'
-                }}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280' }}
               >
                 {showPassword ? <FaEyeSlash /> : <FaEye />}
               </span>
             </div>
-            <small style={{ fontSize: '0.7rem', color: '#666' }}>
-              Must have: 1 Upper, 1 Lower, 1 Digit, 1 Special Char.
-            </small>
+            <small style={{ fontSize: '0.7rem', color: '#666' }}>1 Upper, 1 Lower, 1 Digit, 1 Special Char.</small>
           </div>
 
           <div className="form-group">
@@ -142,9 +133,7 @@ const AdminRegister = () => {
               />
               <span 
                 onClick={() => setShowSecret(!showSecret)}
-                style={{
-                  position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280'
-                }}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280' }}
               >
                 {showSecret ? <FaEyeSlash /> : <FaEye />}
               </span>
@@ -153,6 +142,11 @@ const AdminRegister = () => {
 
           <button type="submit" className="btn btn-danger">Register as Warden</button>
         </form>
+
+        {/* --- NAVIGATION: SWITCH TO LOGIN --- */}
+        <p style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>
+          Already have an account? <span style={{ color: 'var(--danger)', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => navigate('/admin/login')}>Login here</span>
+        </p>
       </div>
     </div>
   );
