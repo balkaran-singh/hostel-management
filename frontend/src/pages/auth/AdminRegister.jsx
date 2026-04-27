@@ -59,48 +59,52 @@ const AdminRegister = () => {
   };
 
   return (
-    <div className="flex-center">
-      <div className="card" style={{ width: '400px', borderTop: '4px solid var(--danger)', position: 'relative' }}>
+    <div id="admin-register-page-container" className="flex-center">
+      <div id="admin-register-card-container" className="card auth-card" style={{ width: '420px', position: 'relative' }}>
         
         {/* --- NAVIGATION: BACK TO HOME --- */}
         <div 
+          id="admin-register-back-home-btn"
           onClick={() => navigate('/')} 
           style={{ 
             position: 'absolute', top: '1rem', left: '1rem', 
             cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' 
           }}
         >
-          <FaArrowLeft /> Home
+          <FaArrowLeft /> Back to Home
         </div>
 
-        <h2 className="title" style={{ marginTop: '1.5rem' }}>Warden Registration</h2>
-        <p className="subtitle">Authorized Personnel Only</p>
+        <h2 className="title" style={{ marginTop: '1.5rem' }}>Administrator Registration</h2>
+        <p className="subtitle">Administrative Access Registration Portal</p>
         
-        {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>⚠️ {error}</div>}
+        {error && <div id="admin-register-error-container" style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</div>}
 
-        <form onSubmit={handleRegister}>
+        <form id="admin-register-form" onSubmit={handleRegister}>
           <div className="form-group">
             <label>Full Name</label>
-            <input name="name" onChange={handleChange} placeholder="Min 3 chars" required />
+            <input id="admin-register-full-name-input" className="auth-input" name="name" onChange={handleChange} placeholder="Minimum 3 characters" required />
           </div>
 
           <div className="form-group">
             <label>Email</label>
-            <input type="email" name="email" onChange={handleChange} required />
+            <input id="admin-register-email-input" className="auth-input" type="email" name="email" onChange={handleChange} required />
           </div>
 
           <div className="form-group">
             <label>Password</label>
-            <div style={{ position: 'relative' }}>
+            <div id="admin-register-password-container" style={{ position: 'relative' }}>
               <input 
+                id="admin-register-password-input"
+                className="auth-input"
                 type={showPassword ? "text" : "password"} 
                 name="password" 
                 onChange={handleChange} 
-                placeholder="8-15 chars, Strong Password"
+                placeholder="8-15 characters"
                 required 
                 style={{ paddingRight: '40px' }}
               />
               <span 
+                id="admin-register-password-visibility-toggle-btn"
                 onClick={() => setShowPassword(!showPassword)}
                 style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280' }}
               >
@@ -112,7 +116,7 @@ const AdminRegister = () => {
 
           <div className="form-group">
             <label>Assign Hostel Block</label>
-            <select name="hostelManaged" onChange={handleChange}>
+            <select id="admin-register-hostel-block-select" className="auth-input" name="hostelManaged" onChange={handleChange}>
               <option value="A">Hostel A</option>
               <option value="B">Hostel B</option>
               <option value="C">Hostel C</option>
@@ -121,17 +125,20 @@ const AdminRegister = () => {
           </div>
 
           <div className="form-group">
-            <label style={{ color: 'red' }}>Secret Warden Key</label>
-            <div style={{ position: 'relative' }}>
+            <label>Administrative Authorization Key</label>
+            <div id="admin-register-secret-key-container" style={{ position: 'relative' }}>
               <input 
+                id="admin-register-secret-key-input"
+                className="auth-input"
                 name="secretKey" 
                 type={showSecret ? "text" : "password"} 
-                placeholder="Enter Access Code" 
+                placeholder="Enter authorization key" 
                 onChange={handleChange} 
                 required 
                 style={{ paddingRight: '40px' }}
               />
               <span 
+                id="admin-register-secret-key-visibility-toggle-btn"
                 onClick={() => setShowSecret(!showSecret)}
                 style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280' }}
               >
@@ -140,12 +147,12 @@ const AdminRegister = () => {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-danger">Register as Warden</button>
+          <button id="admin-register-submit-btn" type="submit" className="btn btn-primary">Register Administrator</button>
         </form>
 
         {/* --- NAVIGATION: SWITCH TO LOGIN --- */}
         <p style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>
-          Already have an account? <span style={{ color: 'var(--danger)', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => navigate('/admin/login')}>Login here</span>
+          Already have an account? <span id="admin-register-proceed-login-link" style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => navigate('/admin/login')}>Proceed to Login</span>
         </p>
       </div>
     </div>

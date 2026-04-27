@@ -11,7 +11,12 @@ const StudentRegister = () => {
     password: '',
     rollNumber: '',
     hostelName: 'A',
-    roomNumber: ''
+    requiresAiMatch: false,
+    surveyData: {
+      sleep: 5,
+      cleanliness: 5,
+      noise: 5
+    }
   });
   
   const [showPassword, setShowPassword] = useState(false);
@@ -22,9 +27,25 @@ const StudentRegister = () => {
     setError('');
   };
 
+  const handleSurveyChange = (e) => {
+    setFormData({
+      ...formData,
+      surveyData: {
+        ...formData.surveyData,
+        [e.target.name]: Number(e.target.value)
+      }
+    });
+    setError('');
+  };
+
+  const handlePreferenceChange = (requiresAiMatch) => {
+    setFormData({ ...formData, requiresAiMatch });
+    setError('');
+  };
+
   // --- STRICT VALIDATION ---
   const validateForm = () => {
-    const { name, password, rollNumber, roomNumber } = formData;
+    const { name, password, rollNumber } = formData;
 
     if (name.length < 3 || name.length > 30) return "Name must be between 3 and 30 characters.";
 
@@ -38,9 +59,6 @@ const StudentRegister = () => {
 
     if (rollNumber.length < 9 || isNaN(rollNumber)) return "Roll Number must be at least 9 digits.";
 
-    const room = parseInt(roomNumber);
-    if (room < 1 || room > 999) return "Room Number must be between 1 and 999.";
-
     return null;
   };
 
@@ -53,7 +71,21 @@ const StudentRegister = () => {
     }
 
     try {
-      await registerStudent(formData);
+      const payload = formData.requiresAiMatch
+        ? {
+            ...formData,
+            surveyData: {
+              sleep: Number(formData.surveyData.sleep),
+              cleanliness: Number(formData.surveyData.cleanliness),
+              noise: Number(formData.surveyData.noise)
+            }
+          }
+        : {
+            ...formData,
+            surveyData: undefined
+          };
+
+      await registerStudent(payload);
       alert('Registration Successful! Please Login.');
       navigate('/student/login');
     } catch (err) {
@@ -62,50 +94,54 @@ const StudentRegister = () => {
   };
 
   return (
-    <div className="flex-center">
-      <div className="card" style={{ width: '400px', position: 'relative' }}>
+    <div id="student-register-page-container" className="flex-center">
+      <div id="student-register-card-container" className="card auth-card" style={{ width: '420px', position: 'relative' }}>
         
         {/* --- BACK TO HOME --- */}
         <div 
+          id="student-register-back-home-btn"
           onClick={() => navigate('/')} 
           style={{ position: 'absolute', top: '1rem', left: '1rem', cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
         >
-          <FaArrowLeft /> Home
+          <FaArrowLeft /> Back to Home
         </div>
 
         <h2 className="title" style={{ marginTop: '1.5rem' }}>Student Registration</h2>
-        <p className="subtitle">Join the hostel community.</p>
+        <p className="subtitle">New Student Registration Portal</p>
         
-        {error && <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>⚠️ {error}</div>}
+        {error && <div id="student-register-error-container" style={{ background: '#fee2e2', color: '#b91c1c', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</div>}
 
-        <form onSubmit={handleRegister}>
+        <form id="student-register-form" onSubmit={handleRegister}>
           <div className="form-group">
             <label>Full Name</label>
-            <input name="name" onChange={handleChange} placeholder="Min 3 chars" required />
+            <input className="auth-input" id="student-register-full-name-input" name="name" onChange={handleChange} placeholder="Minimum 3 characters" required />
           </div>
           
           <div className="form-group">
             <label>Roll Number</label>
-            <input name="rollNumber" type="number" onChange={handleChange} placeholder="e.g. 102300123" required />
+            <input className="auth-input" id="student-register-roll-number-input" name="rollNumber" type="number" onChange={handleChange} placeholder="Example: 102300123" required />
           </div>
 
           <div className="form-group">
             <label>Email</label>
-            <input type="email" name="email" onChange={handleChange} required />
+            <input className="auth-input" id="student-register-email-input" type="email" name="email" onChange={handleChange} required />
           </div>
 
           <div className="form-group">
             <label>Password</label>
-            <div style={{ position: 'relative' }}>
+            <div id="student-register-password-container" style={{ position: 'relative' }}>
               <input 
+                className="auth-input"
+                id="student-register-password-input"
                 type={showPassword ? "text" : "password"} 
                 name="password" 
                 onChange={handleChange} 
-                placeholder="8-15 chars, Strong"
+                placeholder="8-15 characters"
                 required 
                 style={{ paddingRight: '40px' }}
               />
               <span 
+                id="student-register-password-visibility-toggle-btn"
                 onClick={() => setShowPassword(!showPassword)}
                 style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: '#6b7280' }}
               >
@@ -115,27 +151,96 @@ const StudentRegister = () => {
             <small style={{ fontSize: '0.7rem', color: '#666' }}>1 Upper, 1 Lower, 1 Digit, 1 Special Char.</small>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-            <div className="form-group">
-              <label>Hostel Block</label>
-              <select name="hostelName" onChange={handleChange}>
-                <option value="A">Hostel A</option>
-                <option value="B">Hostel B</option>
-                <option value="C">Hostel C</option>
-                <option value="D">Hostel D</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Room No.</label>
-              <input type="number" name="roomNumber" onChange={handleChange} placeholder="1-999" required />
+          <div className="form-group">
+            <label>Hostel Block</label>
+            <select className="auth-input" id="student-register-hostel-block-select" name="hostelName" onChange={handleChange}>
+              <option value="A">Hostel A</option>
+              <option value="B">Hostel B</option>
+              <option value="C">Hostel C</option>
+              <option value="D">Hostel D</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Roommate Preference</label>
+            <div id="student-register-roommate-preference-container" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 0 }}>
+                <input
+                  id="student-register-roommate-specific-radio"
+                  type="radio"
+                  name="roommate-preference"
+                  checked={!formData.requiresAiMatch}
+                  onChange={() => handlePreferenceChange(false)}
+                />
+                I intend to request a specific roommate
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 0 }}>
+                <input
+                  id="student-register-roommate-ai-match-radio"
+                  type="radio"
+                  name="roommate-preference"
+                  checked={formData.requiresAiMatch}
+                  onChange={() => handlePreferenceChange(true)}
+                />
+                Request compatibility-based roommate matching
+              </label>
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary">Register</button>
+          {formData.requiresAiMatch && (
+            <>
+              <div className="form-group">
+                <label>Sleep Preference</label>
+                <select
+                  className="auth-input"
+                  id="student-register-sleep-preference-select"
+                  name="sleep"
+                  value={formData.surveyData.sleep}
+                  onChange={handleSurveyChange}
+                >
+                  <option value={1}>Early Bird</option>
+                  <option value={5}>Normal Sleep Time (Between 10PM-8AM)</option>
+                  <option value={10}>Night Owl</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Cleanliness Preference</label>
+                <select
+                  className="auth-input"
+                  id="student-register-cleanliness-preference-select"
+                  name="cleanliness"
+                  value={formData.surveyData.cleanliness}
+                  onChange={handleSurveyChange}
+                >
+                  <option value={1}>Relaxed/Messy</option>
+                  <option value={5}>Average</option>
+                  <option value={10}>Neat Freak</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Noise Preference</label>
+                <select
+                  className="auth-input"
+                  id="student-register-noise-preference-select"
+                  name="noise"
+                  value={formData.surveyData.noise}
+                  onChange={handleSurveyChange}
+                >
+                  <option value={1}>Quiet/Headphones</option>
+                  <option value={5}>Moderate</option>
+                  <option value={10}>Loud/Music</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          <button id="student-register-submit-btn" type="submit" className="btn btn-primary">Register</button>
         </form>
 
         <p style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>
-          Already have an account? <span style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => navigate('/student/login')}>Login here</span>
+          Already have an account? <span id="student-register-proceed-login-link" style={{ color: 'var(--primary)', cursor: 'pointer', fontWeight: 'bold' }} onClick={() => navigate('/student/login')}>Proceed to Login</span>
         </p>
       </div>
     </div>

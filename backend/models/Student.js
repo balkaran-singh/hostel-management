@@ -6,10 +6,20 @@ const studentSchema = new mongoose.Schema({
   password: { type: String, required: true },
   rollNumber: { type: String, required: true },
   hostelName: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
-  roomNumber: { type: Number, required: true }
+  roommateStatus: {
+    type: String,
+    enum: ['Unassigned', 'Paired', 'Allotted'],
+    default: 'Unassigned'
+  },
+  requiresAiMatch: { type: Boolean, default: false },
+  pairedWith: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', default: null },
+  allocatedRoom: { type: String, default: null },
+  surveyData: {
+    sleep: { type: Number, enum: [1, 5, 10] },
+    cleanliness: { type: Number, enum: [1, 5, 10] },
+    noise: { type: Number, enum: [1, 5, 10] }
+  },
+  pendingInvitations: { type: [String], default: [] }
 });
-
-// Compound Index: Ensures Room 101 in Hostel A is unique
-studentSchema.index({ hostelName: 1, roomNumber: 1 }, { unique: true });
 
 module.exports = mongoose.model('Student', studentSchema);

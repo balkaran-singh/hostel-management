@@ -19,7 +19,29 @@ router.post('/student/register', async (req, res) => {
     
     // Check for duplicate key error (MongoDB code 11000)
     if (err.code === 11000) {
-      return res.status(400).json({ error: 'Email or Room already taken!' });
+      const duplicateField = Object.keys(err.keyPattern || err.keyValue || {})[0];
+      const duplicateValue = err.keyValue?.[duplicateField];
+      const allowedUniqueFields = new Set(['email', 'rollNumber']);
+
+      if (duplicateField === 'email') {
+        return res.status(400).json({ error: 'Email already taken!' });
+      }
+
+      if (duplicateField === 'rollNumber') {
+        return res.status(400).json({ error: 'Roll Number already registered!' });
+      }
+      
+      if (!allowedUniqueFields.has(duplicateField)) {
+        return res.status(500).json({
+          error: `Index misconfiguration detected on '${duplicateField}'. Please restart server and try again.`
+        });
+      }
+
+      return res.status(400).json({
+        error: `Duplicate value for ${duplicateField || 'a unique field'}${
+          duplicateValue !== undefined ? `: ${duplicateValue}` : ''
+        }`
+      });
     }
     
     res.status(500).json({ error: err.message });

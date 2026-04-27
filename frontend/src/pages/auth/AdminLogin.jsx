@@ -22,34 +22,35 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="flex-center">
-      <div className="card" style={{ width: '400px', borderTop: '4px solid var(--danger)', position: 'relative' }}>
+    <div id="admin-login-page-container" className="flex-center">
+      <div id="admin-login-card-container" className="card auth-card" style={{ width: '420px', position: 'relative' }}>
         
         {/* --- BACK TO HOME --- */}
         <div 
+          id="admin-login-back-home-btn"
           onClick={() => navigate('/')} 
           style={{ position: 'absolute', top: '1rem', left: '1rem', cursor: 'pointer', color: '#666', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}
         >
-          <FaArrowLeft /> Home
+          <FaArrowLeft /> Back to Home
         </div>
 
-        <h2 className="title" style={{ marginTop: '1.5rem' }}>Warden Login</h2>
-        <p className="subtitle">Hostel Management Console</p>
+        <h2 className="title" style={{ marginTop: '1.5rem' }}>Administrator Login</h2>
+        <p className="subtitle">Hostel Administration Portal</p>
         
-        <form onSubmit={handleLogin}>
+        <form id="admin-login-form" onSubmit={handleLogin}>
           <div className="form-group">
             <label>Email Address</label>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <input id="admin-login-email-input" className="auth-input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="form-group">
             <label>Password</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input id="admin-login-password-input" className="auth-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
-          <button type="submit" className="btn btn-danger">Login to Console</button>
+          <button id="admin-login-sign-in-btn" type="submit" className="btn btn-primary">Sign In</button>
         </form>
         
         <p style={{ marginTop: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>
-          New Warden? <span style={{ cursor: 'pointer', color: 'var(--danger)', fontWeight: 'bold' }} onClick={() => navigate('/admin/register')}>Register here</span>
+          New Administrator? <span id="admin-login-access-registration-link" style={{ cursor: 'pointer', color: 'var(--primary)', fontWeight: 'bold' }} onClick={() => navigate('/admin/register')}>Access Registration</span>
         </p>
       </div>
     </div>
