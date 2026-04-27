@@ -1,3 +1,3 @@
 backend -- npx nodemon server.js
 fronend -- npm run dev
-ai -- python3 app.py 
+ai -- source venv/bin/activate ,and then, python3 app.py 
