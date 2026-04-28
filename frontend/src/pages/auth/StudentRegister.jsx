@@ -20,6 +20,7 @@ const StudentRegister = () => {
   });
   
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
@@ -40,6 +41,11 @@ const StudentRegister = () => {
 
   const handlePreferenceChange = (requiresAiMatch) => {
     setFormData({ ...formData, requiresAiMatch });
+    setError('');
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    setConfirmPassword(e.target.value);
     setError('');
   };
 
@@ -67,6 +73,11 @@ const StudentRegister = () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      return;
+    }
+
+    if (formData.password !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
@@ -149,6 +160,20 @@ const StudentRegister = () => {
               </span>
             </div>
             <small style={{ fontSize: '0.7rem', color: '#666' }}>1 Upper, 1 Lower, 1 Digit, 1 Special Char.</small>
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              className="auth-input"
+              id="student-register-confirm-password-input"
+              type="password"
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              placeholder="Re-enter password"
+              required
+            />
           </div>
 
           <div className="form-group">

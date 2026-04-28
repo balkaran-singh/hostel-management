@@ -15,10 +15,16 @@ const AdminRegister = () => {
   
   const [showPassword, setShowPassword] = useState(false);
   const [showSecret, setShowSecret] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError('');
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    setConfirmPassword(e.target.value);
     setError('');
   };
 
@@ -46,6 +52,11 @@ const AdminRegister = () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
+      return;
+    }
+
+    if (formData.password !== confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
 
@@ -112,6 +123,20 @@ const AdminRegister = () => {
               </span>
             </div>
             <small style={{ fontSize: '0.7rem', color: '#666' }}>1 Upper, 1 Lower, 1 Digit, 1 Special Char.</small>
+          </div>
+
+          <div className="form-group">
+            <label>Confirm Password</label>
+            <input
+              id="admin-register-confirm-password-input"
+              className="auth-input"
+              type="password"
+              name="confirmPassword"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              placeholder="Re-enter password"
+              required
+            />
           </div>
 
           <div className="form-group">

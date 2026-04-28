@@ -10,6 +10,12 @@ router.post('/student/register', async (req, res) => {
   // --- DEBUG LOG END ---
 
   try {
+    const { rollNumber } = req.body;
+    const existingStudent = await Student.findOne({ rollNumber });
+    if (existingStudent) {
+      return res.status(400).json({ error: 'A student with this roll number is already registered.' });
+    }
+
     const newStudent = new Student(req.body);
     await newStudent.save();
     console.log("Student Saved to DB");
